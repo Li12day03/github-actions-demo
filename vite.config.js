@@ -12,7 +12,7 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
-  publicPath:
+  base:
     process.env.NODE_ENV === "production"
       ? "/github-actions-demo/" // 仓库名
       : "/",
