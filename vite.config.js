@@ -12,8 +12,5 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
-  base:
-    process.env.NODE_ENV === "production"
-      ? "/github-actions-demo/" // 仓库名
-      : "/",
+  base: "/github-actions-demo/",
 });
