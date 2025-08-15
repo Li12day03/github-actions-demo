@@ -1,11 +1,16 @@
-# 使用官方 nginx 镜像
-FROM nginx:alpine
+FROM node:20-alpine
 
-# 复制构建好的静态文件到 nginx 默认目录
-COPY dist/ /usr/share/nginx/html
+WORKDIR /app
 
-# 暴露 80 端口
-EXPOSE 80
+COPY package*.json ./
+RUN npm ci
 
-# 启动 nginx
-CMD ["nginx", "-g", "daemon off;"]
+COPY . .
+
+RUN npm run build
+
+RUN npm install -g serve
+
+CMD ["serve", "-s", "dist", "-l", "3000"]
+
+EXPOSE 3000
