@@ -1,41 +1,49 @@
-name: Deploy Vue CLI to GitHub Pages
+name: Build and Push Docker Image to GHCR # 工作流名称
 
 on:
   push:
-    branches: [main]
-
-# 1. 给 GITHUB_TOKEN 授权
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+    branches:
+      - main # 监听 main 分支的推送事件，触发工作流
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # 在最新的 Ubuntu 虚拟机上运行
+
     steps:
-      - uses: actions/checkout@v4
+      # 第一步：检出代码（把仓库代码下载到 runner）
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v4
+      # 第二步：设置 Node.js 环境，指定版本为 18
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: 20
-          cache: npm
+          node-version: 18
 
-      - run: npm ci
-      - run: npm run build
+      # 第三步：安装项目依赖
+      - name: Install dependencies
+        run: npm install
 
-      # 2. 上传 artifact
-      - uses: actions/upload-pages-artifact@v3
+      # 第四步：执行项目构建，生成 dist 文件夹（静态资源）
+      - name: Build project
+        run: npm run build
+
+      # 第五步：列出 dist 目录内容，用于调试确认构建是否成功
+      - name: Check dist folder
+        run: ls -l dist
+
+      # 第六步：登录 GitHub Container Registry (GHCR)，用于推送镜像
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
         with:
-          path: ./dist
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USERNAME }} # 从仓库 Secrets 读取用户名
+          password: ${{ secrets.GHCR_TOKEN }} # 从仓库 Secrets 读取 PAT token
 
-  # 3. 官方部署 job
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/deploy-pages@v4
-        id: deployment
+      # 第七步：构建 Docker 镜像并推送到 GHCR
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: . # 构建上下文为项目根目录
+          push: true # 构建完成后自动推送镜像
+          tags: ghcr.io/${{ secrets.GHCR_USERNAME }}/github-actions-demo:latest # 镜像标签
